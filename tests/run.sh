@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Tests de install.sh : bash tests/run.sh [motif]
 set -u
+# shellcheck source=tests/lib.sh
 . "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
 test_install_neuf() {
@@ -27,7 +28,7 @@ test_force_ecrase() {
 }
 
 test_prerequis() {
-  local d="$TMP/horsgit-$RANDOM"; mkdir -p "$d"; cd "$d"
+  local d="$TMP/horsgit-$RANDOM"; mkdir -p "$d"; cd "$d" || exit
   run_install; assert_rc 1
   new_project; git remote remove origin
   run_install; assert_rc 1
@@ -40,7 +41,7 @@ test_chemin_avec_espaces() {
 }
 
 test_sous_dossier() {
-  new_project; mkdir sub; cd sub
+  new_project; mkdir sub; cd sub || exit
   run_install; assert_rc 0
   assert_file "$P/factory/bin/job"; assert_no_file "$P/sub/factory"
 }
@@ -142,7 +143,7 @@ test_upstream_persiste() {
 test_refuse_les_liens_symboliques() {
   new_project; mkdir -p "$TMP/cible"; ln -s "$TMP/cible" factory
   run_install --force; assert_rc 2
-  assert_eq "$(ls "$TMP/cible" | wc -l | tr -d ' ')" 0
+  assert_eq "$(find "$TMP/cible" -type f | wc -l | tr -d ' ')" 0
   rm factory; : > "$TMP/autre"; ln -s "$TMP/autre" .gitignore
   run_install; assert_rc 2
   assert_eq "$(wc -c < "$TMP/autre" | tr -d ' ')" 0

@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # Aides communes aux tests de install.sh.
 REPO_ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 TMP=$(mktemp -d)
@@ -11,7 +12,7 @@ new_project() {
   mkdir -p "$P" && git -C "$P" init -q -b main
   git -C "$P" remote add origin https://github.com/acme/app.git
   export GH_LOG="$TMP/gh.log"; : > "$GH_LOG"
-  cd "$P"
+  cd "$P" || exit
 }
 
 # Lance install.sh ; remplit OUT et RC.

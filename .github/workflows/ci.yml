@@ -8,7 +8,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: shellcheck
-        run: shellcheck install.sh tests/*.sh tests/fake-bin/gh
+        run: shellcheck -x install.sh tests/*.sh tests/fake-bin/gh
       - name: Tests de install.sh
         run: bash tests/run.sh
       - name: config.json valide
