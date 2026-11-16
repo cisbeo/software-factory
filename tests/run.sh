@@ -149,6 +149,12 @@ test_refuse_les_liens_symboliques() {
   assert_eq "$(wc -c < "$TMP/autre" | tr -d ' ')" 0
 }
 
+test_refuse_version_lien_symbolique() {
+  new_project; mkdir factory; : > "$TMP/v"; ln -s "$TMP/v" factory/.version
+  run_install --force; assert_rc 2
+  assert_eq "$(wc -c < "$TMP/v" | tr -d ' ')" 0
+}
+
 if [ -z "${SOURCED_ONLY:-}" ]; then
   pat=${1:-.}; pass=0; ko=0
   for t in $(declare -F | awk '{print $3}' | grep '^test_' | grep -E "$pat"); do

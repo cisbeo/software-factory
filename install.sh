@@ -93,7 +93,9 @@ links=""
 while read -r _cat path; do
   if has_symlink "$path" || has_symlink "$path.upstream"; then links="$links  $path"$'\n'; fi
 done <<< "$MANIFEST_LINES"
-{ [ -L .gitignore ] || { [ -e .gitignore ] && [ ! -f .gitignore ]; }; } && links="$links  .gitignore"$'\n'
+for extra in .gitignore factory/.version; do
+  if has_symlink "$extra" || { [ -e "$extra" ] && [ ! -f "$extra" ]; }; then links="$links  $extra"$'\n'; fi
+done
 if [ -n "$links" ]; then
   { echo "install.sh : refus d'écrire à travers un lien symbolique (ou un non-fichier), rien n'a été écrit :"; printf '%s' "$links"; } >&2
   exit 2
