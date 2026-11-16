@@ -104,17 +104,55 @@ if [ "$DRY_RUN" = 1 ]; then
 fi
 
 # --- Copie -------------------------------------------------------------------
+sha() { if command -v sha256sum >/dev/null 2>&1; then sha256sum "$1"; else shasum -a 256 "$1"; fi | awk '{print $1}'; }
+
 copy_file() {
   mkdir -p "$(dirname "$1")"
   cp -p "$SRC/$1" "$1"
 }
 
-while read -r _cat path; do
-  copy_file "$path"
+# sha enregistré à la dernière installation pour un fichier adapté (vide si inconnu)
+recorded_sha() { awk -v p="$1" 'NR > 1 && $2 == p {print $1}' factory/.version 2>/dev/null || true; }
+
+recreated=""
+upstream=""
+while read -r cat path; do
+  if [ "$UPDATE" = 1 ] && [ "$cat" = adapte ]; then
+    if [ ! -e "$path" ]; then
+      copy_file "$path"; recreated="$recreated  $path"$'\n'
+    elif [ "$(recorded_sha "$path")" != "$(sha "$SRC/$path")" ] \
+      && [ "$(sha "$path")" != "$(sha "$SRC/$path")" ]; then
+      if [ "$(sha "$path")" = "$(recorded_sha "$path")" ]; then
+        copy_file "$path"   # jamais modifié depuis l'installation : suit l'amont
+      else
+        cp -p "$SRC/$path" "$path.upstream"; upstream="$upstream  $path.upstream"$'\n'
+      fi
+    fi
+  else
+    copy_file "$path"
+  fi
 done <<< "$MANIFEST_LINES"
 
-sha() { if command -v sha256sum >/dev/null 2>&1; then sha256sum "$1"; else shasum -a 256 "$1"; fi | awk '{print $1}'; }
+# --- .gitignore --------------------------------------------------------------
+for entry in /factory/jobs/ /.worktrees/; do
+  if ! grep -qxF "$entry" .gitignore 2>/dev/null; then
+    if [ -s .gitignore ] && [ -n "$(tail -c1 .gitignore)" ]; then echo >> .gitignore; fi
+    echo "$entry" >> .gitignore
+  fi
+done
 
+# --- Labels GitHub -----------------------------------------------------------
+if [ "$NO_LABELS" = 0 ]; then
+  make_label() {
+    gh label create "$1" --color "$2" --description "$3" --force >/dev/null 2>&1 \
+      || echo "install.sh : label '$1' non créé (droits ?) : crée-le à la main." >&2
+  }
+  make_label factory 5319E7 "Build this with the software factory"
+  make_label factory:needs-info FBCA04 "The factory asked the author a question"
+  make_label factory:needs-human D93F0B "The factory needs a human decision on the PR"
+fi
+
+# --- Version -----------------------------------------------------------------
 {
   echo "$VERSION"
   while read -r cat path; do
@@ -122,5 +160,10 @@ sha() { if command -v sha256sum >/dev/null 2>&1; then sha256sum "$1"; else shasu
   done <<< "$MANIFEST_LINES"
 } > factory/.version
 
-info "Factory $VERSION installée dans $ROOT."
-info "Étape suivante : demande à ton agent de suivre INSTALL.md, étape « Adapter »."
+if [ "$UPDATE" = 1 ]; then info "Factory mise à jour vers $VERSION dans $ROOT."; else info "Factory $VERSION installée dans $ROOT."; fi
+[ -z "$recreated" ] || { info "Fichiers adaptés recréés (ils manquaient) :"; printf '%s' "$recreated"; }
+if [ -n "$upstream" ]; then
+  info "L'amont a changé : fusionne ces fichiers dans tes versions adaptées, puis supprime-les :"
+  printf '%s' "$upstream"
+fi
+[ "$UPDATE" = 1 ] || info "Étape suivante : demande à ton agent de suivre INSTALL.md, étape « Adapter »."

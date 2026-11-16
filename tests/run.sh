@@ -56,6 +56,78 @@ test_dry_run() {
   assert_no_file factory; assert_no_file .gitignore
 }
 
+test_relance_idempotente() {
+  new_project; run_install; assert_rc 0
+  local avant; avant=$(git status --porcelain --untracked-files=all)
+  run_install; assert_rc 0
+  assert_eq "$(git status --porcelain --untracked-files=all)" "$avant"
+  [ -z "$(find . -name '*.upstream' -not -path './.git/*')" ] || fail ".upstream inattendu"
+}
+
+test_maj_gere_remplace() {
+  new_project; run_install; echo "# local" >> factory/bin/job
+  run_install; assert_rc 0
+  cmp -s factory/bin/job "$REPO_ROOT/factory/bin/job" || fail "factory/bin/job non remis à l'amont"
+}
+
+test_maj_adapte_preserve() {
+  new_project; run_install; echo "# local" >> factory/checks.sh
+  run_install; assert_rc 0
+  assert_contains "$(tail -1 factory/checks.sh)" "# local"
+  assert_no_file factory/checks.sh.upstream
+}
+
+test_maj_adapte_amont_change() {
+  new_project; run_install; echo "# local" >> factory/checks.sh
+  sed -i.bak 's#^[0-9a-f]\{64\}  factory/checks.sh$#0000000000000000000000000000000000000000000000000000000000000000  factory/checks.sh#' factory/.version
+  rm factory/.version.bak
+  run_install; assert_rc 0
+  assert_contains "$(tail -1 factory/checks.sh)" "# local"
+  cmp -s factory/checks.sh.upstream "$REPO_ROOT/factory/checks.sh" || fail ".upstream différent de l'amont"
+  assert_contains "$OUT" "factory/checks.sh.upstream"
+}
+
+test_maj_adapte_non_modifie_suit_l_amont() {
+  new_project; run_install
+  sed -i.bak 's#^[0-9a-f]\{64\}  factory/checks.sh$#0000000000000000000000000000000000000000000000000000000000000000  factory/checks.sh#' factory/.version
+  rm factory/.version.bak
+  # checks.sh local identique à l'amont : rien à signaler
+  run_install; assert_rc 0
+  assert_no_file factory/checks.sh.upstream
+  # fichier jamais touché par l'utilisateur, amont modifié : suit l'amont sans .upstream
+  local src="$TMP/src-$RANDOM"; mkdir -p "$src"; cp -R "$REPO_ROOT"/. "$src"/; rm -rf "$src/.git"
+  echo "# nouveau" >> "$src/factory/checks.sh"
+  SRC_OVERRIDE=$src run_install; assert_rc 0
+  assert_no_file factory/checks.sh.upstream
+  assert_contains "$(tail -1 factory/checks.sh)" "# nouveau"
+}
+
+test_maj_adapte_supprime() {
+  new_project; run_install; rm factory/config.json
+  run_install; assert_rc 0
+  assert_file factory/config.json
+  assert_contains "$OUT" "factory/config.json"
+}
+
+test_gitignore() {
+  new_project; run_install; assert_rc 0
+  assert_eq "$(cat .gitignore)" "$(printf '/factory/jobs/\n/.worktrees/')"
+  new_project; printf 'node_modules' > .gitignore
+  run_install; assert_rc 0
+  assert_eq "$(cat .gitignore)" "$(printf 'node_modules\n/factory/jobs/\n/.worktrees/')"
+  run_install; assert_rc 0
+  assert_eq "$(grep -c '^/factory/jobs/$' .gitignore)" 1
+}
+
+test_labels() {
+  new_project; run_install; assert_rc 0
+  for l in "factory" "factory:needs-info" "factory:needs-human"; do
+    grep -q "^label create $l " "$GH_LOG" || fail "label $l non créé"
+  done
+  new_project; run_install --no-labels; assert_rc 0
+  ! grep -q '^label create' "$GH_LOG" || fail "labels créés malgré --no-labels"
+}
+
 if [ -z "${SOURCED_ONLY:-}" ]; then
   pat=${1:-.}; pass=0; ko=0
   for t in $(declare -F | awk '{print $3}' | grep '^test_' | grep -E "$pat"); do
