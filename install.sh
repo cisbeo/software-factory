@@ -79,6 +79,26 @@ MANIFEST_LINES=$(awk '!/^#/ && NF' "$SRC/MANIFEST")
 
 cd "$ROOT"
 
+# Refuse d'écrire à travers un lien symbolique (fichier cible ou dossier parent).
+has_symlink() {
+  local acc="" part
+  local IFS=/
+  for part in $1; do
+    acc="${acc:+$acc/}$part"
+    [ -L "$acc" ] && return 0
+  done
+  return 1
+}
+links=""
+while read -r _cat path; do
+  if has_symlink "$path" || has_symlink "$path.upstream"; then links="$links  $path"$'\n'; fi
+done <<< "$MANIFEST_LINES"
+{ [ -L .gitignore ] || { [ -e .gitignore ] && [ ! -f .gitignore ]; }; } && links="$links  .gitignore"$'\n'
+if [ -n "$links" ]; then
+  { echo "install.sh : refus d'écrire à travers un lien symbolique (ou un non-fichier), rien n'a été écrit :"; printf '%s' "$links"; } >&2
+  exit 2
+fi
+
 UPDATE=0
 [ -f factory/.version ] && UPDATE=1
 
@@ -112,10 +132,12 @@ copy_file() {
 }
 
 # sha enregistré à la dernière installation pour un fichier adapté (vide si inconnu)
-recorded_sha() { awk -v p="$1" 'NR > 1 && $2 == p {print $1}' factory/.version 2>/dev/null || true; }
+cp factory/.version "$WORK/old.version" 2>/dev/null || true
+recorded_sha() { awk -v p="$1" 'NR > 1 && $2 == p {print $1}' "$WORK/old.version" 2>/dev/null || true; }
 
 recreated=""
 upstream=""
+pending=" "
 while read -r cat path; do
   if [ "$UPDATE" = 1 ] && [ "$cat" = adapte ]; then
     if [ ! -e "$path" ]; then
@@ -126,6 +148,7 @@ while read -r cat path; do
         copy_file "$path"   # jamais modifié depuis l'installation : suit l'amont
       else
         cp -p "$SRC/$path" "$path.upstream"; upstream="$upstream  $path.upstream"$'\n'
+        pending="$pending $path "
       fi
     fi
   else
@@ -156,7 +179,12 @@ fi
 {
   echo "$VERSION"
   while read -r cat path; do
-    [ "$cat" = adapte ] && echo "$(sha "$SRC/$path")  $path"
+    if [ "$cat" = adapte ]; then
+      case $pending in
+        *" $path "*) echo "$(recorded_sha "$path")  $path" ;;   # fusion en attente : on garde l'ancien sha
+        *) echo "$(sha "$SRC/$path")  $path" ;;
+      esac
+    fi
   done <<< "$MANIFEST_LINES"
 } > factory/.version
 

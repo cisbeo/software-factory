@@ -128,6 +128,26 @@ test_labels() {
   ! grep -q '^label create' "$GH_LOG" || fail "labels créés malgré --no-labels"
 }
 
+test_upstream_persiste() {
+  new_project; run_install; echo "# local" >> factory/checks.sh
+  sed -i.bak 's#^[0-9a-f]\{64\}  factory/checks.sh$#0000000000000000000000000000000000000000000000000000000000000000  factory/checks.sh#' factory/.version
+  rm factory/.version.bak
+  run_install; assert_contains "$OUT" "factory/checks.sh.upstream"
+  rm factory/checks.sh.upstream
+  run_install; assert_rc 0
+  assert_contains "$OUT" "factory/checks.sh.upstream"   # l'avertissement ne disparaît pas tout seul
+  assert_file factory/checks.sh.upstream
+}
+
+test_refuse_les_liens_symboliques() {
+  new_project; mkdir -p "$TMP/cible"; ln -s "$TMP/cible" factory
+  run_install --force; assert_rc 2
+  assert_eq "$(ls "$TMP/cible" | wc -l | tr -d ' ')" 0
+  rm factory; : > "$TMP/autre"; ln -s "$TMP/autre" .gitignore
+  run_install; assert_rc 2
+  assert_eq "$(wc -c < "$TMP/autre" | tr -d ' ')" 0
+}
+
 if [ -z "${SOURCED_ONLY:-}" ]; then
   pat=${1:-.}; pass=0; ko=0
   for t in $(declare -F | awk '{print $3}' | grep '^test_' | grep -E "$pat"); do
