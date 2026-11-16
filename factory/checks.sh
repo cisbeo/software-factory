@@ -1,13 +1,10 @@
 #!/usr/bin/env bash
-# The repo's checks. Exit 0 only when the branch is fit to review.
+# Les contrôles du dépôt. Sortir avec 0 seulement quand la branche est bonne à relire.
 #
-# The gate runs this script from the main checkout with the job's worktree as
-# the working directory. Keep it fast, deterministic and non-interactive: no
-# watch modes, no prompts, nothing that rewrites files.
+# Le gate lance ce script depuis le checkout principal, avec le worktree du job
+# comme dossier courant. Il doit rester rapide, déterministe et non interactif :
+# pas de mode watch, pas de question, rien qui réécrive des fichiers.
 set -euo pipefail
 
-npm ci
-npm run lint
-npm run typecheck
-npm test
-npm run build
+echo "factory/checks.sh n'est pas rempli : remplace ce bloc par les vrais contrôles du projet (voir INSTALL.md, étape Adapter)." >&2
+exit 1

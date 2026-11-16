@@ -28,7 +28,7 @@ in the main checkout; your one file goes there.
    important paths, commands and conventions, and any doc it says to read
    before touching the area this feature lives in.
 4. `GLOSSARY.md` and the ADRs in `docs/adr/` that touch the area the feature
-   lives in. Write the spec in the glossary's words, never the ones its
+   lives in, if they exist. Write the spec in the glossary's words, never the ones its
    _Avoid_ lines rule out, and treat an accepted ADR as a constraint.
 5. The code the feature touches. Find the real files and components; don't
    guess at names.

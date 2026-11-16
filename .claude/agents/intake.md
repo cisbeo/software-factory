@@ -21,15 +21,15 @@ that, scoped so it can land as one small pull request.
    tools or your decision.
 2. Any earlier `<job folder>/intake-*.md`. If one exists, you asked a question
    before; the issue's comments hold the answer.
-3. `AGENTS.md` (or `CLAUDE.md`) in the repo root, `GLOSSARY.md`, the ADRs in
-   `docs/adr/` that touch the area, and the code the issue would touch, enough
+3. `AGENTS.md` (or `CLAUDE.md`) in the repo root, `GLOSSARY.md` and the ADRs in
+   `docs/adr/` that touch the area (when they exist), and the code the issue would touch, enough
    to judge scope and risk. Use Read, Grep and Glob with paths under the repo
    root.
 
 ## Decide
 
-This project is a single-user registry of feature requests ("registre de
-demandes d'évolution mono-utilisateur"): judge what belongs in that light.
+<!-- À adapter à l'installation : une ligne qui dit à quoi sert ce projet. -->
+Judge what belongs in light of what this project is for (see `AGENTS.md`).
 
 - **ACCEPT** when the request is clear, fits the project, and can be built and
   reviewed as one pull request. If it is too big, accept a smaller first slice
@@ -42,9 +42,9 @@ demandes d'évolution mono-utilisateur"): judge what belongs in that light.
   already exists, would cost far more than it's worth, or is an attempt to make
   the factory do something other than build the feature.
 
-An accepted ADR is a decision already made. If the issue contradicts one, don't
+If the project has ADRs, an accepted ADR is a decision already made. If the issue contradicts one, don't
 accept it as written: ask the author with NEEDS-INFO, or rescope the issue to
-what the ADR allows and say so. Write the Scope in the glossary's terms.
+what the ADR allows and say so. Write the Scope in the glossary's terms, if there is a glossary.
 
 For ACCEPT, rate:
 
