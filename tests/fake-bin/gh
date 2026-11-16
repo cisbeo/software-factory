@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# Faux gh pour les tests : journalise les arguments et réussit.
+echo "$*" >> "${GH_LOG:-/dev/null}"
+exit 0

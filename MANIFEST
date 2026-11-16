@@ -1,0 +1,27 @@
+# <catégorie> <chemin> — gere : remplacé à chaque mise à jour ; adapte : copié une fois, jamais écrasé
+adapte .claude/agents/approver.md
+adapte .claude/agents/builder.md
+adapte .claude/agents/intake.md
+adapte .claude/agents/reviewer-code.md
+adapte .claude/agents/reviewer-security.md
+adapte .claude/agents/reviewer-spec.md
+adapte .claude/agents/reviewer-standards.md
+adapte .claude/agents/reviewer-ui.md
+adapte .claude/agents/reviewer-ux.md
+adapte .claude/agents/spec-writer.md
+adapte factory/checks.sh
+adapte factory/config.json
+gere .claude/skills/LICENSE-mattpocock-skills
+gere .claude/skills/diagnosing-bugs/SKILL.md
+gere .claude/skills/diagnosing-bugs/scripts/hitl-loop.template.sh
+gere .claude/skills/factory/SKILL.md
+gere .claude/skills/pr/CREDITS.md
+gere .claude/skills/pr/SKILL.md
+gere .claude/skills/tdd/SKILL.md
+gere .claude/skills/tdd/mocking.md
+gere .claude/skills/tdd/tests.md
+gere factory/bin/gate
+gere factory/bin/job
+gere factory/bin/route
+gere factory/dashboard.html
+gere factory/CREDITS.md
